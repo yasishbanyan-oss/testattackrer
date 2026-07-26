@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>پنل مدیریت شیشه‌ای</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+    body {
+      background-color: #17212b;
+      color: #ffffff;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .header {
+      text-align: center;
+      padding: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      background: #242f3d;
+      border-radius: 12px;
+      margin-bottom: 5px;
+      color: #64b5f6;
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+      opacity: 0.8;
+    }
+    /* رنگ‌های دقیق دکمه‌های شیشه‌ای */
+    .btn-green { background-color: #4caf50; }
+    .btn-red { background-color: #f44336; }
+    .btn-blue { background-color: #2196f3; }
+    .btn-yellow { background-color: #ff9800; }
+    .btn-dark { background-color: #2b5278; }
+  </style>
+</head>
+<body>
+
+  <div class="header">🎨 پنل مدیریت اتک (رنگی)</div>
+
+  <!-- ردیف اول: استارت اتک‌ها -->
+  <div class="btn-row">
+    <button class="btn btn-green" onclick="send('mode_random')">🟢 اتک تصادفی</button>
+    <button class="btn btn-red" onclick="send('mode_lock')">🔴 اتک قفلی</button>
+  </div>
+
+  <!-- ردیف دوم: استاپ -->
+  <div class="btn-row">
+    <button class="btn btn-yellow" onclick="send('stop_attack')">🛑 توقف اتک</button>
+  </div>
+
+  <!-- ردیف سوم: سایر کلیدها -->
+  <div class="btn-row">
+    <button class="btn btn-blue" onclick="send('menu_main')">🔵 منوی اصلی</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // باز شدن کامل WebApp در تلگرام
+
+    function send(action) {
+      tg.sendData(action);
+      tg.close();
+    }
+  </script>
+</body>
+</html>
