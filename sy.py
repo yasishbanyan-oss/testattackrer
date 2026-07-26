@@ -15,11 +15,10 @@ from telegram.ext import (
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # --- تنظیمات اولیه ---
-BOT_TOKEN = "8772627350:AAEcZMYdHY6z3DlnkQv2Cm2eZStrR94IeUk"
+BOT_TOKEN = "8791724770:AAFVk9FHklBaZ7o5pOE1-2LWNJKx7k68yQE"
 OWNER_ID = 6749949992
 DB_FILE = "database.json"
 
-# آدرس وب‌اپ برای دکمه‌های رنگی
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://your-app-name.onrender.com/index.html")
 
 # --- دیتابیس پیش‌فرض ---
@@ -32,7 +31,7 @@ bot_data = {
     "tag_text": "شخص پدر مرده", 
     "unauth_msg": "به توپم دست نزن", 
     "lock_msg": "کصمادرت اگر لف بدی مادرجنده",
-    "saved_users": {},       # ذخیره به صورت {user_id: {"username": str, "custom_tag": str}}
+    "saved_users": {},       
     "admins": {
         str(OWNER_ID): {
             "type": "permanent",
@@ -40,9 +39,9 @@ bot_data = {
             "permissions": ["admins", "messages", "commands"]
         }
     },
-    "user_logs": {},          # آنتی‌دلیت لاگ
-    "history": [],            # لاگ ۲۴ ساعته
-    "joined_groups": {}       # لیست گروه‌ها برای /report
+    "user_logs": {},          
+    "history": [],            
+    "joined_groups": {}       
 }
 
 # حالات FSM
@@ -77,7 +76,6 @@ def load_db():
 
 load_db()
 
-# --- سیستم لاگ ۲۴ ساعته (/recent) ---
 def log_event(event_text: str):
     now = time.time()
     bot_data["history"].append({"time": now, "event": event_text})
@@ -120,7 +118,7 @@ def estimate_creation_year(user_id: int) -> str:
     elif user_id < 7500000000: return "2025"
     else: return "2026"
 
-# --- کیبوردهای شیشه‌ای و قفل پنل ---
+# --- کیبوردهای شیشه‌ای ---
 def get_main_menu(owner_user_id: int):
     keyboard = [
         [InlineKeyboardButton("🎨 پنل شیشه‌ای رنگی (WebApp)", web_app=WebAppInfo(url=WEBAPP_URL))],
@@ -185,23 +183,22 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(welcome_text, message_thread_id=thread_id)
 
-# --- دستور /panel (مدیریت) ---
+# --- دستور /panel (مستقل) ---
 async def panel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     thread_id = update.message.message_thread_id if update.message.is_topic_message else None
 
     if not is_admin(user_id):
         await update.message.reply_text(bot_data.get("unauth_msg", "به توپم دست نزن"), message_thread_id=thread_id)
-        return ConversationHandler.END
+        return
 
     await update.message.reply_text(
         f"👋 به پنل مدیریت ربات خوش آمدید.\n🏷 متن تگ فعلی: {bot_data['tag_text']}\n💬 متن غیرادمین فعلی: {bot_data.get('unauth_msg', 'به توپم دست نزن')}\n🔒 متن اتک قفلی: {bot_data.get('lock_msg', 'کصمادرت اگر لف بدی مادرجنده')}\nلطفاً یک بخش را انتخاب کنید:",
         reply_markup=get_main_menu(user_id),
         message_thread_id=thread_id
     )
-    return ConversationHandler.END
 
-# --- مدیریت کلیک روی دکمه‌ها ---
+# --- مدیریت دکمه‌های اینلاین ---
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data_parts = query.data.split(":")
@@ -209,26 +206,25 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     owner_user_id = int(data_parts[1]) if len(data_parts) > 1 else query.from_user.id
 
     if not await check_panel_owner(query, owner_user_id):
-        return ConversationHandler.END
+        return
 
     await query.answer()
     user_id = query.from_user.id
 
     if action == "menu_main":
         await query.edit_message_text("👋 پنل اصلی مدیریت:", reply_markup=get_main_menu(owner_user_id))
-        return ConversationHandler.END
 
     elif action == "menu_set_msg":
         if not has_permission(user_id, "messages"):
             await query.edit_message_text("❌ شما دسترسی به این بخش را ندارید.", reply_markup=get_main_menu(owner_user_id))
-            return ConversationHandler.END
+            return
         await query.edit_message_text("📝 پیام‌های متنی خود را ارسال کنید.\nدر پایان دستور /done را ارسال کنید.")
         return WAITING_FOR_MSG
 
     elif action == "menu_set_media":
         if not has_permission(user_id, "messages"):
             await query.edit_message_text("❌ شما دسترسی به این بخش را ندارید.", reply_markup=get_main_menu(owner_user_id))
-            return ConversationHandler.END
+            return
         await query.edit_message_text("🖼 عکس، ویس، گیف یا استیکر مورد نظر خود را بفرستید.\nدر پایان دستور /done را ارسال کنید.")
         return WAITING_FOR_MEDIA
 
@@ -246,7 +242,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif action == "menu_time":
         await query.edit_message_text(f"⏱ تنظیم زمان ارسال پیام\nزمان فعلی: {bot_data['interval']} ثانیه\nیکی را انتخاب کنید:", reply_markup=get_time_menu(owner_user_id))
-        return ConversationHandler.END
 
     elif action.startswith("time_"):
         val = action.split("_")[1]
@@ -258,7 +253,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             bot_data["interval"] = sec
             save_db()
             await query.edit_message_text(f"✅ زمان ارسال روی {sec} ثانیه تنظیم شد.", reply_markup=get_main_menu(owner_user_id))
-            return ConversationHandler.END
 
     elif action.startswith("mode_"):
         mode = action.split("_")[1]
@@ -273,14 +267,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         log_event(f"🚀 شروع اتک با حالت {mode} توسط کاربر {user_id}")
         await query.edit_message_text(f"🚀 اتک با حالت **{mode}** و فاصله {bot_data['interval']} ثانیه استارت خورد!")
-        return ConversationHandler.END
 
     elif action == "menu_admins":
         if user_id != OWNER_ID and not has_permission(user_id, "admins"):
             await query.edit_message_text("❌ فقط مالک یا ادمین‌های مجاز دسترسی دارند.", reply_markup=get_main_menu(owner_user_id))
-            return ConversationHandler.END
+            return
         await query.edit_message_text("👥 بخش مدیریت ادمین‌ها:", reply_markup=get_admin_menu(owner_user_id))
-        return ConversationHandler.END
 
     elif action == "admin_list":
         admin_text = "📋 **لیست ادمین‌های فعلی ربات:**\n\n"
@@ -291,7 +283,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             atype = "دائمی" if ainfo.get("type") == "permanent" else "ساعتی"
             admin_text += f"• `{aid}` ({uname}) ➔ {atype}\n"
         await query.edit_message_text(admin_text, parse_mode="Markdown", reply_markup=get_admin_menu(owner_user_id))
-        return ConversationHandler.END
 
     elif action == "admin_delall_confirm":
         kb = [
@@ -299,7 +290,6 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("❌ انصراف", callback_data=f"admin_list:{owner_user_id}")]
         ]
         await query.edit_message_text("⚠️ **آیا مطمئن هستید که می‌خواهید تمام ادمین‌های ربات (به جز مالک) رو پاکسازی کنید؟**", parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(kb))
-        return ConversationHandler.END
 
     elif action == "admin_delall_yes":
         bot_data["admins"] = {
@@ -312,19 +302,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         save_db()
         log_event("☣️ پاکسازی کامل تمامی ادمین‌های ربات")
         await query.edit_message_text("✅ تمامی ادمین‌ها پاکسازی شدند و فقط مالک اصلی باقی ماند.", reply_markup=get_admin_menu(owner_user_id))
-        return ConversationHandler.END
 
     elif action == "admin_add":
         await query.edit_message_text("لطفاً آیدی عددی ادمین جدید را وارد کنید:")
         return WAITING_FOR_ADMIN_ID
 
-    elif action == "admin_del":
-        await query.edit_message_text("برای حذف ادمین، آیدی عددی اونو بفرستید.")
-        return ConversationHandler.END
-
     elif action == "admin_owners":
         await query.edit_message_text(f"👑 مالک ربات:\nآیدی عددی: `{OWNER_ID}`", parse_mode="Markdown", reply_markup=get_admin_menu(owner_user_id))
-        return ConversationHandler.END
 
     elif action.startswith("backup_"):
         b_type = action.split("_")[1]
@@ -341,14 +325,12 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if os.path.exists(out_file): os.remove(out_file)
 
         await query.edit_message_text("✅ بکاپ درخواستی ارسال گردید.")
-        return ConversationHandler.END
 
     elif action.startswith("target_add_"):
         target_uid = action.split("_")[2]
         bot_data["saved_users"][target_uid] = {"username": "Unknown", "custom_tag": None}
         save_db()
         await query.edit_message_text(f"✅ کاربر {target_uid} به لیست سیو شده‌ها اضافه شد.")
-        return ConversationHandler.END
 
     elif action == "menu_help":
         help_text = (
@@ -356,26 +338,17 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/panel - باز کردن پنل مدیریت\n"
             "/set ID [Title] - افزودن کاربر با تگ اختصاصی\n"
             "/list - مشاهده افراد سیو شده\n"
-            "/listmsg - مشاهده پیام‌ها و مدیاها\n"
             "/del ID - حذف یک فرد\n"
-            "/delallsave - پاکسازی کامل افراد\n"
-            "/deltext - پاکسازی پیام‌های متنی\n"
+            "/deltext - پاکسازی متون\n"
             "/delmedia - پاکسازی مدیاها\n"
-            "/deldata - پاکسازی کامل متون و مدیاها\n"
             "/go - شروع اتک\n"
             "/stop - توقف اتک\n"
-            "/recent - گزارش اتفاقات ۲۴ ساعت اخیر\n"
             "/report - گزارش زنده به پیوی مالک\n"
-            "/info - مشخصات کامل کاربر (عمومی)\n"
-            "/history_user ID - تاریخچه پیام‌های ثبت‌شده\n"
-            "/backup - دریافت منوی بکاپ\n"
-            "/restore - ریستور بکاپ متنی/دیتابیس\n"
-            "/status - وضعیت فنی ربات\n"
+            "/info - مشخصات کامل کاربر\n"
         )
         await query.edit_message_text(help_text, parse_mode="Markdown", reply_markup=get_main_menu(owner_user_id))
-        return ConversationHandler.END
 
-# --- دریافت پیام‌ها و FSM ---
+# --- هندلرهای ورود اطلاعات FSM ---
 async def collect_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_data["messages"].append(update.message.text)
     save_db()
@@ -397,8 +370,6 @@ async def collect_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bot_data["medias"].append(media_item)
         save_db()
         await update.message.reply_text(f"✅ مدیا ذخیره شد! (تعداد: {len(bot_data['medias'])})\nمدیای بعدی را بفرستید یا /done را بزنید.", message_thread_id=thread_id)
-    else:
-        await update.message.reply_text("❌ فرمت نامعتبر! عکس، ویس، گیف یا استیکر بفرستید.", message_thread_id=thread_id)
     return WAITING_FOR_MEDIA
 
 async def done_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -798,9 +769,12 @@ async def handle_webapp(request):
 async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
+    # ثبت مستقل دستور پنل و استارت (بیرون از فلو)
+    app.add_handler(CommandHandler("start", start_cmd))
+    app.add_handler(CommandHandler("panel", panel_cmd))
+
     conv_handler = ConversationHandler(
         entry_points=[
-            CommandHandler("panel", panel_cmd),
             CallbackQueryHandler(handle_callback)
         ],
         states={
@@ -812,12 +786,11 @@ async def main():
             WAITING_FOR_CUSTOM_TIME: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_custom_time)],
             WAITING_FOR_ADMIN_ID: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_admin_id)],
         },
-        fallbacks=[CommandHandler("panel", panel_cmd), CallbackQueryHandler(handle_callback)],
+        fallbacks=[CallbackQueryHandler(handle_callback)],
         allow_reentry=True,
         per_message=False
     )
 
-    app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("set", set_user_cmd))
     app.add_handler(CommandHandler("list", list_cmd))
