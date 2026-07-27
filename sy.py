@@ -74,14 +74,12 @@ def load_db():
 
 load_db()
 
-# --- لاگ ۲۴ ساعته ---
 def log_event(event_text: str):
     now = time.time()
     bot_data["history"].append({"time": now, "event": event_text})
     bot_data["history"] = [h for h in bot_data["history"] if now - h["time"] <= 86400]
     save_db()
 
-# --- بررسی دسترسی‌ها ---
 def is_admin(user_id: int) -> bool:
     uid_str = str(user_id)
     now = time.time()
@@ -115,22 +113,22 @@ def estimate_creation_year(user_id: int) -> str:
     elif user_id < 7500000000: return "2025"
     else: return "2026"
 
-# --- منوهای شیشه‌ای همراه با قفل پنل ---
+# --- منوهای شیشه‌ای بازطراحی‌شده ---
 def get_main_menu(owner_user_id: int):
     keyboard = [
-        [InlineKeyboardButton("🟢 1️⃣ تنظیم پیام‌ها", callback_data=f"menu_set_msg:{owner_user_id}"), InlineKeyboardButton("🔵 🖼 تنظیم مدیا", callback_data=f"menu_set_media:{owner_user_id}")],
-        [InlineKeyboardButton("🟡 2️⃣ زمان ارسال", callback_data=f"menu_time:{owner_user_id}"), InlineKeyboardButton("🟣 🏷 کلمه تگ", callback_data=f"menu_tag_text:{owner_user_id}")],
-        [InlineKeyboardButton("🔴 💬 متن غیرادمین", callback_data=f"menu_unauth_msg:{owner_user_id}"), InlineKeyboardButton("🛑 🔒 تنظیم پیام قفل", callback_data=f"menu_lock_msg:{owner_user_id}")],
-        [InlineKeyboardButton("👥 3️⃣ مدیریت ادمین‌ها", callback_data=f"menu_admins:{owner_user_id}"), InlineKeyboardButton("📖 4️⃣ راهنما", callback_data=f"menu_help:{owner_user_id}")]
+        [InlineKeyboardButton("💬 تنظیم پیام‌ها", callback_data=f"menu_set_msg:{owner_user_id}"), InlineKeyboardButton("🖼 تنظیم مدیا", callback_data=f"menu_set_media:{owner_user_id}")],
+        [InlineKeyboardButton("⏱ زمان ارسال", callback_data=f"menu_time:{owner_user_id}"), InlineKeyboardButton("🏷 کلمه تگ", callback_data=f"menu_tag_text:{owner_user_id}")],
+        [InlineKeyboardButton("📢 متن غیرادمین", callback_data=f"menu_unauth_msg:{owner_user_id}"), InlineKeyboardButton("🔒 تنظیم پیام قفل", callback_data=f"menu_lock_msg:{owner_user_id}")],
+        [InlineKeyboardButton("👥 مدیریت ادمین‌ها", callback_data=f"menu_admins:{owner_user_id}"), InlineKeyboardButton("📖 راهنما", callback_data=f"menu_help:{owner_user_id}")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_attack_mode_menu(owner_user_id: int):
     keyboard = [
-        [InlineKeyboardButton("🔵 🎲 تصادفی (Random)", callback_data=f"mode_random:{owner_user_id}")],
-        [InlineKeyboardButton("🟢 🔢 ترتیبی (Sequential)", callback_data=f"mode_sequential:{owner_user_id}")],
-        [InlineKeyboardButton("🟡 💣 خشاب تک‌پیامی (Single Bomb)", callback_data=f"mode_bomb:{owner_user_id}")],
-        [InlineKeyboardButton("🔴 🔒 اتک قفلی (Lock & Mute)", callback_data=f"mode_lock:{owner_user_id}")]
+        [InlineKeyboardButton("🎲 تصادفی (Random)", callback_data=f"mode_random:{owner_user_id}")],
+        [InlineKeyboardButton("🔢 ترتیبی (Sequential)", callback_data=f"mode_sequential:{owner_user_id}")],
+        [InlineKeyboardButton("💣 خشاب تک‌پیامی (Single Bomb)", callback_data=f"mode_bomb:{owner_user_id}")],
+        [InlineKeyboardButton("🔒 اتک قفلی (Lock & Mute)", callback_data=f"mode_lock:{owner_user_id}")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -145,18 +143,33 @@ def get_time_menu(owner_user_id: int):
 
 def get_admin_menu(owner_user_id: int):
     keyboard = [
-        [InlineKeyboardButton("🟢 ➕ افزودن ادمین", callback_data=f"admin_add:{owner_user_id}"), InlineKeyboardButton("🔴 ➖ حذف ادمین", callback_data=f"admin_del:{owner_user_id}")],
-        [InlineKeyboardButton("🔵 📋 لیست ادمین‌ها", callback_data=f"admin_list:{owner_user_id}"), InlineKeyboardButton("☣️ ⚠️ پاکسازی همه ادمین‌ها", callback_data=f"admin_delall_confirm:{owner_user_id}")],
-        [InlineKeyboardButton("🟡 👑 مالک‌ها", callback_data=f"admin_owners:{owner_user_id}")],
+        [InlineKeyboardButton("➕ افزودن ادمین", callback_data=f"admin_add:{owner_user_id}"), InlineKeyboardButton("➖ حذف ادمین", callback_data=f"admin_del:{owner_user_id}")],
+        [InlineKeyboardButton("📋 لیست ادمین‌ها", callback_data=f"admin_list:{owner_user_id}"), InlineKeyboardButton("⚠️ پاکسازی همه ادمین‌ها", callback_data=f"admin_delall_confirm:{owner_user_id}")],
+        [InlineKeyboardButton("👑 مالک‌ها", callback_data=f"admin_owners:{owner_user_id}")],
         [InlineKeyboardButton("🔙 بازگشت", callback_data=f"menu_main:{owner_user_id}")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_permissions_menu(owner_user_id: int, target_id: int):
+    perms = bot_data.get("temp_admin_data", {}).get("permissions", [])
+    p1 = "✅" if "admins" in perms else "❌"
+    p2 = "✅" if "messages" in perms else "❌"
+    p3 = "✅" if "commands" in perms else "❌"
+
+    keyboard = [
+        [InlineKeyboardButton(f"{p1} دسترسی مدیریت ادمین‌ها", callback_data=f"perm_admins:{owner_user_id}:{target_id}")],
+        [InlineKeyboardButton(f"{p2} دسترسی تنظیم پیام و مدیا", callback_data=f"perm_messages:{owner_user_id}:{target_id}")],
+        [InlineKeyboardButton(f"{p3} دسترسی به دستورات عمومی", callback_data=f"perm_commands:{owner_user_id}:{target_id}")],
+        [InlineKeyboardButton("💾 ثبت و نهایی‌سازی ادمین", callback_data=f"perm_save:{owner_user_id}:{target_id}")],
+        [InlineKeyboardButton("🔙 بازگشت", callback_data=f"menu_admins:{owner_user_id}")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
 def get_backup_menu(owner_user_id: int):
     keyboard = [
-        [InlineKeyboardButton("🟣 🎬 فقط گیف‌ها", callback_data=f"backup_animation:{owner_user_id}"), InlineKeyboardButton("🔴 🎭 فقط استیکرها", callback_data=f"backup_sticker:{owner_user_id}")],
-        [InlineKeyboardButton("🟢 📷 فقط عکس‌ها", callback_data=f"backup_photo:{owner_user_id}"), InlineKeyboardButton("🟡 🎙 فقط ویس‌ها", callback_data=f"backup_voice:{owner_user_id}")],
-        [InlineKeyboardButton("🔵 📦 کل دیتابیس (کاملاً یکجا)", callback_data=f"backup_full:{owner_user_id}")]
+        [InlineKeyboardButton("🎬 فقط گیف‌ها", callback_data=f"backup_animation:{owner_user_id}"), InlineKeyboardButton("🎭 فقط استیکرها", callback_data=f"backup_sticker:{owner_user_id}")],
+        [InlineKeyboardButton("📷 فقط عکس‌ها", callback_data=f"backup_photo:{owner_user_id}"), InlineKeyboardButton("🎙 فقط ویس‌ها", callback_data=f"backup_voice:{owner_user_id}")],
+        [InlineKeyboardButton("📦 کل دیتابیس (یکجا)", callback_data=f"backup_full:{owner_user_id}")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -301,6 +314,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("لطفاً آیدی عددی ادمین جدید را وارد کنید:")
         return WAITING_FOR_ADMIN_ID
 
+    elif action.startswith("perm_"):
+        p = action.split("_")[1]
+        target_id = data_parts[2] if len(data_parts) > 2 else "0"
+        
+        if p == "save":
+            t_data = bot_data.get("temp_admin_data", {})
+            bot_data["admins"][str(target_id)] = {
+                "type": "permanent",
+                "username": t_data.get("username", "نامشخص"),
+                "permissions": t_data.get("permissions", ["admins", "messages", "commands"])
+            }
+            save_db()
+            log_event(f"➕ ثبت ادمین جدید: {target_id}")
+            await query.edit_message_text(f"✅ ادمین `{target_id}` با موفقیت ثبت گردید.", parse_mode="Markdown", reply_markup=get_admin_menu(owner_user_id))
+        else:
+            perms = bot_data.setdefault("temp_admin_data", {}).setdefault("permissions", ["admins", "messages", "commands"])
+            if p in perms: perms.remove(p)
+            else: perms.append(p)
+            await query.edit_message_text("⚙️ تعیین دسترسی‌های ادمین جدید:", reply_markup=get_permissions_menu(owner_user_id, int(target_id)))
+
     elif action == "admin_owners":
         await query.edit_message_text(f"👑 مالک ربات:\nآیدی عددی: `{OWNER_ID}`", parse_mode="Markdown", reply_markup=get_admin_menu(owner_user_id))
 
@@ -322,33 +355,48 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif action.startswith("target_add_"):
         target_uid = action.split("_")[2]
-        bot_data["saved_users"][target_uid] = {"username": "Unknown", "custom_tag": None}
+        fetched_username = "Unknown"
+        try:
+            c = await context.bot.get_chat(int(target_uid))
+            if c.username: fetched_username = c.username
+        except Exception: pass
+
+        bot_data["saved_users"][target_uid] = {"username": fetched_username, "custom_tag": None}
         save_db()
-        await query.edit_message_text(f"✅ کاربر {target_uid} به لیست سیو شده‌ها اضافه شد.")
+        await query.edit_message_text(f"✅ کاربر {target_uid} به لیست افراد سیو شده اضافه شد.")
 
     elif action == "menu_help":
-        help_text = (
-            "📖 **راهنمای جامع ربات اتکر:**\n\n"
-            "/panel - باز کردن پنل مدیریت\n"
-            "/set ID [Title] - افزودن کاربر با تگ اختصاصی\n"
-            "/list - مشاهده افراد سیو شده\n"
-            "/listmsg - مشاهده پیام‌ها و مدیاها\n"
-            "/del ID - حذف یک فرد\n"
-            "/delallsave - پاکسازی کامل افراد\n"
-            "/deltext - پاکسازی متون\n"
-            "/delmedia - پاکسازی مدیاها\n"
-            "/deldata - پاکسازی کامل متون و مدیاها\n"
-            "/go - شروع اتک\n"
-            "/stop - توقف اتک\n"
-            "/recent - گزارش اتفاقات ۲۴ ساعت اخیر\n"
-            "/report - گزارش زنده ربات\n"
-            "/info - مشخصات کامل کاربر (عمومی)\n"
-            "/history_user ID - تاریخچه پیام‌های ثبت‌شده\n"
-            "/backup - دریافت منوی بکاپ\n"
-            "/restore - ریستور بکاپ متنی/دیتابیس\n"
-            "/status - وضعیت فنی ربات\n"
-        )
-        await query.edit_message_text(help_text, parse_mode="Markdown", reply_markup=get_main_menu(owner_user_id))
+        await help_cmd(update, context)
+
+# --- راهنمای جامع ---
+async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    thread_id = update.message.message_thread_id if update.message.is_topic_message if update.message else None
+    
+    help_text = (
+        "📖 **راهنمای کامل دستورات ربات:**\n\n"
+        "• `/panel` - باز کردن پنل مدیریت ربات\n"
+        "• `/set ID1 ID2 ID3` - افزودن دسته‌ای آیدی‌ها یا لقب بر روی ریپلی\n"
+        "• `/list` - مشاهده لیست افراد سیو شده\n"
+        "• `/listmsg` - مشاهده پیام‌ها و مدیاهای ثبت‌شده در خشاب\n"
+        "• `/del ID` - حذف یک فرد از لیست سیو شده‌ها (یا بر روی ریپلی)\n"
+        "• `/delallsave` - پاکسازی کامل افراد سیو شده\n"
+        "• `/deltext` - پاکسازی پیام‌های متنی خشاب\n"
+        "• `/delmedia` - پاکسازی مدیاهای خشاب\n"
+        "• `/deldata` - پاکسازی کامل دیتابیس متون و مدیاها\n"
+        "• `/go` - شروع اتک با منوی انتخاب حالت\n"
+        "• `/stop` - توقف ارسال خودکار اتک\n"
+        "• `/recent` - گزارش اتفاقات و انقضاهای ۲۴ ساعت اخیر\n"
+        "• `/report` - ارسال گزارش زنده ربات به پیوی مالک\n"
+        "• `/info` - شناسنامه و مشخصات کامل کاربر بر روی ریپلی (عمومی)\n"
+        "• `/history_user ID` - تاریخچه پیام‌های ثبت‌شده کاربر target\n"
+        "• `/backup` - دریافت منوی فایل بکاپ دیتابیس\n"
+        "• `/restore` - ریستور متون از روی فایل .txt یا .json بکاپ\n"
+        "• `/status` - مشاهده وضعیت فنی و آمار زنده ربات\n"
+    )
+    if update.callback_query:
+        await update.callback_query.edit_message_text(help_text, parse_mode="Markdown", reply_markup=get_main_menu(update.effective_user.id))
+    else:
+        await update.message.reply_text(help_text, parse_mode="Markdown", message_thread_id=thread_id)
 
 # --- دریافت پیام‌های FSM ---
 async def collect_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -426,17 +474,21 @@ async def receive_admin_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
             elif chat_info.first_name: fetched_username = chat_info.first_name
         except Exception: pass
 
-        bot_data["admins"][str(new_admin_id)] = {
-            "type": "permanent",
+        bot_data["temp_admin_data"] = {
+            "id": new_admin_id,
             "username": fetched_username,
             "permissions": ["admins", "messages", "commands"]
         }
-        save_db()
-        await update.message.reply_text(f"✅ ادمین جدید با آیدی `{new_admin_id}` و نام `{fetched_username}` ثبت شد.", parse_mode="Markdown", reply_markup=get_admin_menu(update.effective_user.id), message_thread_id=thread_id)
+        await update.message.reply_text(
+            f"👤 آیدی `{new_admin_id}` ({fetched_username}) دریافت شد.\nلطفاً دسترسی‌های مدنظر را تعیین و سپس ثبت کنید:",
+            parse_mode="Markdown",
+            reply_markup=get_permissions_menu(update.effective_user.id, new_admin_id),
+            message_thread_id=thread_id
+        )
         return ConversationHandler.END
     return WAITING_FOR_ADMIN_ID
 
-# --- دستورات اصلی ربات ---
+# --- دستورات هدف‌گذاری ---
 async def set_user_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     thread_id = update.message.message_thread_id if update.message.is_topic_message else None
     if not is_admin(update.effective_user.id):
@@ -451,10 +503,17 @@ async def set_user_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bot_data["saved_users"][uid] = {"username": target_user.username or "NoUsername", "custom_tag": custom_tag}
         added.append(f"{uid} (تگ: {custom_tag or 'پیش‌فرض'})")
     elif context.args:
-        uid = context.args[0]
-        custom_tag = " ".join(context.args[1:]) if len(context.args) > 1 else None
-        bot_data["saved_users"][uid] = {"username": "Unknown", "custom_tag": custom_tag}
-        added.append(f"{uid} (تگ: {custom_tag or 'پیش‌فرض'})")
+        for arg in context.args:
+            if arg.isdigit():
+                uid = arg
+                fetched_uname = "Unknown"
+                try:
+                    c = await context.bot.get_chat(int(uid))
+                    if c.username: fetched_uname = c.username
+                except Exception: pass
+
+                bot_data["saved_users"][uid] = {"username": fetched_uname, "custom_tag": None}
+                added.append(f"{uid} (تگ: پیش‌فرض)")
 
     if added:
         save_db()
@@ -470,7 +529,17 @@ async def list_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         text = "📋 **لیست کاربران تنظیم‌شده:**\n\n"
         for uid, info in users.items():
-            uname = f"@{info['username']}" if info.get('username') != "Unknown" else "بدون یوزرنیم"
+            uname_val = info.get('username')
+            if not uname_val or uname_val == "Unknown" or uname_val == "NoUsername":
+                try:
+                    c = await context.bot.get_chat(int(uid))
+                    if c.username:
+                        uname_val = c.username
+                        info['username'] = uname_val
+                        save_db()
+                except Exception: pass
+
+            uname = f"@{uname_val}" if uname_val and uname_val not in ["Unknown", "NoUsername"] else "بدون یوزرنیم"
             ctag = info.get('custom_tag') or 'پیش‌فرض'
             text += f"• `{uid}` ({uname}) ➔ 🏷 لقب: {ctag}\n"
         await update.message.reply_text(text, parse_mode="Markdown", message_thread_id=thread_id)
@@ -487,11 +556,19 @@ async def listmsg_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def del_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     thread_id = update.message.message_thread_id if update.message.is_topic_message else None
     if not is_admin(update.effective_user.id): return
-    target_id = context.args[0] if context.args else None
+    
+    target_id = None
+    if update.message.reply_to_message:
+        target_id = str(update.message.reply_to_message.from_user.id)
+    elif context.args:
+        target_id = str(context.args[0])
+
     if target_id and target_id in bot_data["saved_users"]:
         del bot_data["saved_users"][target_id]
         save_db()
-        await update.message.reply_text(f"❌ کاربر {target_id} حذف شد.", message_thread_id=thread_id)
+        await update.message.reply_text(f"❌ کاربر {target_id} با موفقیت حذف شد.", message_thread_id=thread_id)
+    else:
+        await update.message.reply_text("❌ کاربر مورد نظر در لیست یافت نشد.", message_thread_id=thread_id)
 
 async def delallsave_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     thread_id = update.message.message_thread_id if update.message.is_topic_message else None
@@ -555,6 +632,9 @@ async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     thread_id = update.message.message_thread_id if update.message.is_topic_message else None
     if update.effective_user.id != OWNER_ID: return
     
+    # اعلام در گروه
+    await update.message.reply_text("📢 گزارش کارکرد ربات به پیوی شما ارسال شد.", message_thread_id=thread_id)
+    
     groups_list_text = "👥 **گروه‌های فعال ربات:**\n"
     for gid, gtitle in bot_data.get("joined_groups", {}).items():
         groups_list_text += f"• {gtitle} (`{gid}`)\n"
@@ -568,7 +648,11 @@ async def report_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"👥 ادمین‌ها: {len(bot_data['admins'])}\n\n"
         f"{groups_list_text}"
     )
-    await update.message.reply_text(rep, parse_mode="Markdown", message_thread_id=thread_id)
+    # ارسال فقط به پیوی مالک
+    try:
+        await context.bot.send_message(chat_id=OWNER_ID, text=rep, parse_mode="Markdown")
+    except Exception as e:
+        logging.error(f"Error sending report to owner PM: {e}")
 
 # --- موتور اتک اتوماتیک ---
 async def start_auto_sending(chat_id: int, thread_id: int, context: ContextTypes.DEFAULT_TYPE):
@@ -691,25 +775,36 @@ async def history_user_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_user.id) or not context.args: return
     uid = context.args[0]
     logs = bot_data.get("user_logs", {}).get(uid, [])
-    text = f"📜 **تاریخچه پیام‌های تارگت {uid}:**\n\n"
-    for l in logs[-15:]: text += f"⏱ [{l['time']}] {l['text']}\n"
+    
+    if not logs:
+        await update.message.reply_text(f"📜 هیچ تاریخچه‌ای برای کاربر `{uid}` ثبت نشده است.", parse_mode="Markdown", message_thread_id=thread_id)
+        return
+
+    text = f"📜 **تاریخچه پیام‌های تارگت `{uid}`:**\n\n"
+    for l in logs[-15:]: 
+        text += f"⏱ [{l['time']}] {l['text']}\n"
     await update.message.reply_text(text, message_thread_id=thread_id)
 
 async def status_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    thread_id = update.message.message_thread_id if update.message.is_topic_message else None
     if not is_admin(update.effective_user.id): return
     start_time = time.time()
-    msg = await update.message.reply_text("در حال محاسبه پینگ...")
+    msg = await update.message.reply_text("در حال محاسبه پینگ...", message_thread_id=thread_id)
     ping = round((time.time() - start_time) * 1000, 2)
 
     status_text = (
         f"📊 **وضعیت ربات اتکر:**\n\n"
         f"⚡️ پینگ ربات: {ping}ms\n"
-        f"👥 ادمین‌ها: {len(bot_data['admins'])}\n"
-        f"🎯 تارگت‌ها: {len(bot_data['saved_users'])}\n"
-        f"💬 پیام‌ها: {len(bot_data['messages'])}\n"
-        f"🖼 مدیاها: {len(bot_data['medias'])}\n"
+        f"👥 تعداد ادمین‌ها: {len(bot_data['admins'])}\n"
+        f"🎯 افراد سیو شده: {len(bot_data['saved_users'])}\n"
+        f"💬 پیام‌های متنی: {len(bot_data['messages'])}\n"
+        f"🖼 تعداد مدیاها: {len(bot_data['medias'])}\n"
+        f"🏷 کلمه تگ فعلی: {bot_data['tag_text']}\n"
+        f"💬 متن غیرادمین: {bot_data.get('unauth_msg', 'به توپم دست نزن')}\n"
+        f"⏱ فاصله ارسال: {bot_data['interval']} ثانیه\n"
+        f"🚀 حالت فعلی: {bot_data.get('attack_mode', 'نامشخص')}\n"
     )
-    await msg.edit_text(status_text, parse_mode="Markdown")
+    await msg.edit_text(status_text)
 
 # --- سنسور خروج اعضا و لاگ ---
 async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -745,6 +840,7 @@ async def main():
 
     app.add_handler(CommandHandler("start", start_cmd))
     app.add_handler(CommandHandler("panel", panel_cmd))
+    app.add_handler(CommandHandler("help", help_cmd))
 
     conv_handler = ConversationHandler(
         entry_points=[CallbackQueryHandler(handle_callback)],
